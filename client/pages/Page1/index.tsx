@@ -27,15 +27,38 @@ export default function HomePage() {
     });
   }, [userEmail, user?.name]);
 
-  const { data: progression } = useApiData(
+  const { data: progression, loading: progressionLoading, isError: progressionError, refetch: refetchProgression } = useApiData(
     "CampGetUserProgression",
     { userEmail },
     { enabled: !!userEmail }
   );
 
-  const passedQuizIds = progression?.passedQuizIds ?? [];
-  const completedQuizIds = progression?.completedQuizIds ?? [];
-  const retakeQuizIds = progression?.retakeQuizIds ?? [];
+  // Cache progression in localStorage for resilience against API timeouts
+  const CACHE_KEY = `camp_progression_${userEmail}`;
+  useEffect(() => {
+    if (progression && userEmail) {
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(progression));
+      } catch {
+        // localStorage full or unavailable — ignore
+      }
+    }
+  }, [progression, userEmail, CACHE_KEY]);
+
+  // Use live data if available, fall back to cached data on error
+  const effectiveProgression = progression ?? (() => {
+    if (!userEmail) return null;
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const passedQuizIds = effectiveProgression?.passedQuizIds ?? [];
+  const completedQuizIds = effectiveProgression?.completedQuizIds ?? [];
+  const retakeQuizIds = effectiveProgression?.retakeQuizIds ?? [];
   // "Fully failed" = in retakeQuizIds is false AND completed but not passed
   // i.e., used all 4 attempts without passing → they get "Review Quiz" to see answers
   const fullyFailedQuizIds = completedQuizIds.filter(
@@ -128,6 +151,37 @@ export default function HomePage() {
         <div className="mb-6">
           <XpCard />
         </div>
+
+        {/* Error state — progression API failed and no cached data */}
+        {progressionError && !effectiveProgression && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-6 shadow-sm">
+            <h3 className="text-sm font-bold text-amber-900 mb-1">⚠️ Trouble loading your progress</h3>
+            <p className="text-sm text-amber-700 mb-3">
+              We couldn't reach the server right now. Your quiz data is safe — this is a temporary connection issue.
+            </p>
+            <button
+              onClick={() => refetchProgression()}
+              className="px-4 py-2 text-sm font-medium bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
+            >
+              🔄 Retry
+            </button>
+          </div>
+        )}
+
+        {/* Stale data notice — using cached progress */}
+        {progressionError && effectiveProgression && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 flex items-center justify-between">
+            <p className="text-sm text-blue-700">
+              📡 Showing your last-known progress (connection hiccup). Your data is safe.
+            </p>
+            <button
+              onClick={() => refetchProgression()}
+              className="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ml-3 flex-shrink-0"
+            >
+              Retry
+            </button>
+          </div>
+        )}
 
         {/* Before You Begin */}
         <div className="bg-white rounded-xl border border-slate-200 p-5 mb-8 shadow-sm">

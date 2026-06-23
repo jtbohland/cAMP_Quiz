@@ -1,3 +1,4 @@
+import { useMemo, useState, useCallback } from "react";
 import type { Question } from "@/data/quiz-types.js";
 
 interface QuestionCardProps {
@@ -11,6 +12,36 @@ interface QuestionCardProps {
   showResource?: boolean;
 }
 
+/**
+ * Creates a seeded shuffle permutation for MC answer options.
+ * Returns the shuffled options, a mapping from shuffled→original indices,
+ * and the new position of the correct answer in the shuffled order.
+ */
+function createOptionShuffle(
+  options: string[],
+  correctIndex: number,
+  questionId: number,
+  sessionSeed: number
+) {
+  const indices = options.map((_, i) => i);
+  // Seeded Fisher-Yates using question ID + per-session random seed
+  let seed = Math.floor((questionId + sessionSeed * 100000) * 2654435761) & 0xffffffff;
+  const random = () => {
+    seed = (seed * 1664525 + 1013904223) & 0xffffffff;
+    return (seed >>> 0) / 0xffffffff;
+  };
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  return {
+    shuffledOptions: indices.map((origIdx) => options[origIdx]),
+    // originalIndices[shuffledPos] = originalPos
+    originalIndices: indices,
+    shuffledCorrectIndex: indices.indexOf(correctIndex),
+  };
+}
+
 export default function QuestionCard({
   question,
   index,
@@ -21,6 +52,41 @@ export default function QuestionCard({
   isCorrect,
   showResource = false,
 }: QuestionCardProps) {
+  // Per-session random seed — stable for this component instance
+  const [sessionSeed] = useState(() => Math.random());
+
+  // Shuffle MC options (not T/F or fill-in-the-blank)
+  const optionShuffle = useMemo(() => {
+    if (question.type !== "mc" || !question.options || question.options.length <= 1) return null;
+    return createOptionShuffle(
+      question.options,
+      question.correct as number,
+      question.id,
+      sessionSeed
+    );
+  }, [question.id, question.type, question.options, question.correct, sessionSeed]);
+
+  // Map userAnswer (original index) → shuffled position for display
+  const mcSelected = useMemo(() => {
+    if (!optionShuffle || userAnswer === null) return userAnswer;
+    const origIdx = parseInt(userAnswer);
+    const shuffledPos = optionShuffle.originalIndices.indexOf(origIdx);
+    return shuffledPos >= 0 ? String(shuffledPos) : userAnswer;
+  }, [optionShuffle, userAnswer]);
+
+  // Map shuffled selection → original index for the parent
+  const mcOnAnswer = useCallback(
+    (shuffledIdx: string) => {
+      if (!optionShuffle) {
+        onAnswer(shuffledIdx);
+        return;
+      }
+      const origIdx = optionShuffle.originalIndices[parseInt(shuffledIdx)];
+      onAnswer(String(origIdx));
+    },
+    [optionShuffle, onAnswer]
+  );
+
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
@@ -36,11 +102,11 @@ export default function QuestionCard({
 
       {question.type === "mc" && question.options && (
         <MultipleChoiceOptions
-          options={question.options}
-          selected={userAnswer}
-          onSelect={onAnswer}
+          options={optionShuffle ? optionShuffle.shuffledOptions : question.options}
+          selected={mcSelected}
+          onSelect={mcOnAnswer}
           showFeedback={showFeedback}
-          correctIndex={question.correct as number}
+          correctIndex={optionShuffle ? optionShuffle.shuffledCorrectIndex : (question.correct as number)}
         />
       )}
 
