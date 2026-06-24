@@ -33,6 +33,21 @@ export default api({
     success: z.boolean(),
   }),
   async run(ctx, input) {
+    // Dedup check: reject if this exact quiz + user + attempt_number already exists
+    const existing = await ctx.integrations.db.query(
+      `SELECT id FROM camp_quiz_attempts
+       WHERE quiz_id = $1 AND user_email = $2 AND attempt_number = $3
+       LIMIT 1`,
+      z.object({ id: z.number() }),
+      [input.quizId, input.userEmail, input.attemptNumber],
+      { label: "Check for duplicate attempt" }
+    );
+
+    if (existing.length > 0) {
+      // Already recorded — return the existing ID instead of inserting a dupe
+      return { attemptId: existing[0].id, success: true };
+    }
+
     const attemptResult = await ctx.integrations.db.query(
       `INSERT INTO camp_quiz_attempts (quiz_id, user_email, user_name, user_role, attempt_number, score, total_questions, passed, time_spent_seconds)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
