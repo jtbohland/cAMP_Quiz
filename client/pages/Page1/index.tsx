@@ -119,7 +119,7 @@ export default function HomePage() {
                 🏔️ cAMP Ascent: Sales
               </h1>
               <p className="text-sm text-amber-100 mt-1">
-                🧭 Knowledge Checks — Validate your learning from each session
+                🧠 Knowledge Checks — Validate your learning from each session
               </p>
             </div>
             <div className="flex gap-2">
