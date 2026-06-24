@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router";
 import { useApiData } from "@/hooks/useApiData.js";
 import { QUIZZES } from "@/data/quizzes/index.js";
+import CampersTable from "@/components/camp/CampersTable.js";
+import LeaderboardMini from "@/components/camp/LeaderboardMini.js";
 
 export default function AnalyticsPage() {
   const navigate = useNavigate();
@@ -12,6 +14,8 @@ export default function AnalyticsPage() {
   });
 
   const { data: visitStats } = useApiData("CampGetVisitStats", {});
+  const { data: campersData, loading: campersLoading } = useApiData("CampGetCampers", {});
+  const { data: leaderboardData, loading: lbLoading } = useApiData("CampGetLeaderboard", {});
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -39,40 +43,106 @@ export default function AnalyticsPage() {
             Failed to load analytics: {error?.message ?? "Unknown error"}
           </div>
         )}
-        {data && <AnalyticsDashboard data={data} visitStats={visitStats} />}
+        {data && (
+          <AnalyticsDashboard
+            data={data}
+            visitStats={visitStats}
+            campers={campersData?.campers}
+            campersLoading={campersLoading}
+            leaderboard={leaderboardData?.leaderboard}
+            lbLoading={lbLoading}
+          />
+        )}
       </main>
     </div>
   );
 }
 
-function AnalyticsDashboard({ data, visitStats }: { data: any; visitStats: { totalVisits: number; uniqueVisitors: number } | undefined }) {
-  const { summary, byQuiz, byRole, mostMissed, recentAttempts } = data;
+/* ────────────────────────── Dashboard ────────────────────────── */
+
+function AnalyticsDashboard({
+  data,
+  visitStats,
+  campers,
+  campersLoading,
+  leaderboard,
+  lbLoading,
+}: {
+  data: any;
+  visitStats: { totalVisits: number; uniqueVisitors: number } | undefined;
+  campers: any[] | undefined;
+  campersLoading: boolean;
+  leaderboard: any[] | undefined;
+  lbLoading: boolean;
+}) {
+  const { summary, byQuiz, byRole, mostMissed } = data;
 
   return (
-    <div className="space-y-8">
-      {/* Visit Stats */}
+    <div className="space-y-10">
+      {/* ── 1. Overall Summary ── */}
       <section>
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">👁️ Page Visits</h2>
-        <div className="grid grid-cols-2 md:grid-cols-2 gap-4 max-w-md">
-          <StatCard label="Total Visits" value={visitStats?.totalVisits ?? "—"} />
+        <SectionHeading emoji="⛺" title="Overall Summary" />
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <StatCard label="Total Attempts" value={summary?.totalAttempts ?? 0} />
+          <StatCard label="Unique Learners" value={summary?.uniqueUsers ?? 0} />
+          <StatCard label="Avg Score" value={`${summary?.averageScore ?? 0}%`} />
+          <StatCard label="Pass Rate" value={`${summary?.overallPassRate ?? 0}%`} />
+          <StatCard label="Page Visits" value={visitStats?.totalVisits ?? "—"} />
           <StatCard label="Unique Visitors" value={visitStats?.uniqueVisitors ?? "—"} />
         </div>
       </section>
 
-      {/* Summary Cards */}
+      {/* ── 2. Performance by Role ── */}
       <section>
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">⛺ Overall Summary</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard label="Total Attempts" value={summary?.totalAttempts ?? 0} />
-          <StatCard label="Unique Users" value={summary?.uniqueUsers ?? 0} />
-          <StatCard label="Avg Score" value={`${summary?.averageScore ?? 0}%`} />
-          <StatCard label="Pass Rate" value={`${summary?.overallPassRate ?? 0}%`} />
+        <SectionHeading emoji="🧗" title="Performance by Role" />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          {(byRole ?? []).map((row: any) => (
+            <div key={row.user_role} className="bg-white rounded-xl border border-slate-200 p-4">
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">{row.user_role}</p>
+              <p className="text-2xl font-bold text-slate-900">{row.avg_score}%</p>
+              <p className="text-xs text-slate-500 mt-1">{row.attempts} attempt{row.attempts !== 1 ? "s" : ""} • {row.pass_rate}% pass rate</p>
+            </div>
+          ))}
+          {(!byRole || byRole.length === 0) && (
+            <div className="col-span-full bg-white rounded-xl border border-slate-200 p-6 text-center text-sm text-slate-500">
+              No role data available yet.
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Per-Quiz Breakdown */}
+      {/* ── 3. cAMPers ── */}
       <section>
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">🧭 Per-Quiz Breakdown</h2>
+        <SectionHeading emoji="🏕️" title="cAMPers" />
+        {campersLoading ? (
+          <div className="bg-white rounded-xl border border-slate-200 p-6 animate-pulse">
+            <div className="h-4 w-40 bg-slate-200 rounded mb-4" />
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => <div key={i} className="h-10 bg-slate-100 rounded" />)}
+            </div>
+          </div>
+        ) : (
+          <CampersTable campers={campers ?? []} />
+        )}
+      </section>
+
+      {/* ── 4. XP Leaderboard ── */}
+      <section>
+        <SectionHeading emoji="🏆" title="XP Leaderboard" />
+        {lbLoading ? (
+          <div className="bg-white rounded-xl border border-slate-200 p-6 animate-pulse">
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => <div key={i} className="h-12 bg-slate-100 rounded" />)}
+            </div>
+          </div>
+        ) : (
+          <LeaderboardMini leaderboard={leaderboard ?? []} />
+        )}
+      </section>
+
+      {/* ── 5. Per-Quiz Breakdown ── */}
+      <section>
+        <SectionHeading emoji="🧭" title="Per-Quiz Breakdown" />
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
           <table className="w-full text-sm">
             <thead>
@@ -98,17 +168,11 @@ function AnalyticsDashboard({ data, visitStats }: { data: any; visitStats: { tot
                     <td className="text-center px-4 py-3 text-slate-700">{row.attempts}</td>
                     <td className="text-center px-4 py-3 text-slate-700">{row.avg_score}%</td>
                     <td className="text-center px-4 py-3">
-                      <span
-                        className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                          row.pass_rate >= 80
-                            ? "bg-green-100 text-green-700"
-                            : row.pass_rate >= 50
-                              ? "bg-amber-100 text-amber-700"
-                              : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {row.pass_rate}%
-                      </span>
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+                        row.pass_rate >= 80 ? "bg-green-100 text-green-700" :
+                        row.pass_rate >= 50 ? "bg-amber-100 text-amber-700" :
+                        "bg-red-100 text-red-700"
+                      }`}>{row.pass_rate}%</span>
                     </td>
                     <td className="text-center px-4 py-3 text-slate-700">{row.review_count}</td>
                   </tr>
@@ -117,7 +181,7 @@ function AnalyticsDashboard({ data, visitStats }: { data: any; visitStats: { tot
               {(!byQuiz || byQuiz.length === 0) && (
                 <tr>
                   <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
-                    No quiz data yet. Attempts will appear here once users complete quizzes.
+                    No quiz data yet.
                   </td>
                 </tr>
               )}
@@ -126,29 +190,10 @@ function AnalyticsDashboard({ data, visitStats }: { data: any; visitStats: { tot
         </div>
       </section>
 
-      {/* Role Comparison */}
+      {/* ── 6. Most-Missed Questions ── */}
       <section>
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">🧗 Performance by Role</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {(byRole ?? []).map((row: any) => (
-            <div key={row.user_role} className="bg-white rounded-xl border border-slate-200 p-4">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">{row.user_role}</p>
-              <p className="text-2xl font-bold text-slate-900">{row.avg_score}%</p>
-              <p className="text-xs text-slate-500">{row.attempts} attempt{row.attempts !== 1 ? "s" : ""}</p>
-            </div>
-          ))}
-          {(!byRole || byRole.length === 0) && (
-            <div className="col-span-full bg-white rounded-xl border border-slate-200 p-6 text-center text-sm text-slate-500">
-              No role data available yet.
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Most-Missed Questions */}
-      <section>
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">🔥 Most-Missed Questions</h2>
-        <p className="text-xs text-slate-500 mb-3">Showing questions with ≤65% correct rate (miss rate ≥35%)</p>
+        <SectionHeading emoji="🔥" title="Most-Missed Questions" />
+        <p className="text-xs text-slate-500 mb-3">Questions with ≤65% correct rate (miss rate ≥35%)</p>
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
           {(mostMissed ?? []).length > 0 ? (
             <div className="divide-y divide-slate-100">
@@ -173,68 +218,17 @@ function AnalyticsDashboard({ data, visitStats }: { data: any; visitStats: { tot
           )}
         </div>
       </section>
-
-      {/* Individual Learner Results */}
-      <section>
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">👤 Individual Learner Results</h2>
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 bg-slate-50">
-                <th className="text-left px-4 py-3 font-medium text-slate-600">Name</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600">Role</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600">Quiz</th>
-                <th className="text-center px-4 py-3 font-medium text-slate-600">Score</th>
-                <th className="text-center px-4 py-3 font-medium text-slate-600">Result</th>
-                <th className="text-center px-4 py-3 font-medium text-slate-600">Attempt</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(recentAttempts ?? []).map((row: any, i: number) => {
-                const quizMeta = QUIZZES.find((q) => q.id === row.quiz_id);
-                const scorePercent = row.total_questions > 0
-                  ? Math.round((row.score / row.total_questions) * 100)
-                  : 0;
-                return (
-                  <tr key={i} className="border-b border-slate-50">
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-slate-900">{row.user_name}</p>
-                    </td>
-                    <td className="px-4 py-3 text-slate-700">{row.user_role}</td>
-                    <td className="px-4 py-3">
-                      <p className="text-slate-900">{quizMeta?.title ?? row.quiz_id}</p>
-                      <p className="text-xs text-slate-500">{quizMeta?.day}</p>
-                    </td>
-                    <td className="text-center px-4 py-3 text-slate-700">
-                      {row.score}/{row.total_questions} ({scorePercent}%)
-                    </td>
-                    <td className="text-center px-4 py-3">
-                      <span
-                        className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                          row.passed
-                            ? "bg-green-100 text-green-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {row.passed ? "✅ Passed" : "❌ Failed"}
-                      </span>
-                    </td>
-                    <td className="text-center px-4 py-3 text-slate-600">#{row.attempt_number}</td>
-                  </tr>
-                );
-              })}
-              {(!recentAttempts || recentAttempts.length === 0) && (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
-                    No individual results yet. Data will appear as learners complete quizzes.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
     </div>
+  );
+}
+
+/* ────────────────────────── Shared Components ────────────────────────── */
+
+function SectionHeading({ emoji, title }: { emoji: string; title: string }) {
+  return (
+    <h2 className="text-lg font-semibold text-slate-900 mb-4">
+      {emoji} {title}
+    </h2>
   );
 }
 
@@ -251,7 +245,7 @@ function LoadingSkeleton() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => (
+        {[...Array(6)].map((_, i) => (
           <div key={i} className="bg-white rounded-xl border border-slate-200 p-5 animate-pulse">
             <div className="h-7 w-16 bg-slate-200 rounded mb-2" />
             <div className="h-3 w-20 bg-slate-100 rounded" />
@@ -261,9 +255,7 @@ function LoadingSkeleton() {
       <div className="bg-white rounded-xl border border-slate-200 p-4 animate-pulse">
         <div className="h-4 w-40 bg-slate-200 rounded mb-4" />
         <div className="space-y-3">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-10 bg-slate-100 rounded" />
-          ))}
+          {[...Array(5)].map((_, i) => <div key={i} className="h-10 bg-slate-100 rounded" />)}
         </div>
       </div>
     </div>

@@ -12,6 +12,7 @@ import CampGetUserXP from './camp/get-user-xp.js';
 import CampGetLeaderboard from './camp/get-leaderboard.js';
 import CampTrackVisit from './camp/track-visit.js';
 import CampGetVisitStats from './camp/get-visit-stats.js';
+import CampGetCampers from './camp/get-campers.js';
 
 const apis = {
   CampSetupTables,
@@ -25,6 +26,7 @@ const apis = {
   CampGetLeaderboard,
   CampTrackVisit,
   CampGetVisitStats,
+  CampGetCampers,
 } as const;
 
 export default apis;

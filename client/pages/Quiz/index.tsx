@@ -53,6 +53,7 @@ export default function QuizPage() {
   const { run: submitAttempt, loading: submitting } = useApi("CampSubmitAttempt");
   const { run: trackReview } = useApi("CampTrackReview");
   const preSubmitXpRef = useRef<number>(0);
+  const submitLockRef = useRef(false); // Prevents double-submit on rapid clicks
 
   // Get user info from Superblocks context
   const user = useSuperblocksUser();
@@ -160,7 +161,8 @@ export default function QuizPage() {
   }, []);
 
   const handleSubmitQuiz = useCallback(async () => {
-    if (!quiz || !role) return;
+    if (!quiz || !role || submitLockRef.current) return;
+    submitLockRef.current = true; // Lock immediately — before any async work
     timer.pause();
     const elapsed = timer.getElapsed();
 
