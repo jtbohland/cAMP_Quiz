@@ -109,35 +109,35 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-orange-50">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200">
+      <header className="bg-amber-700 border-b border-amber-800">
         <div className="max-w-5xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">
+              <h1 className="text-2xl font-bold text-white">
                 🏔️ cAMP Ascent: Sales
               </h1>
-              <p className="text-sm text-slate-600 mt-1">
+              <p className="text-sm text-amber-100 mt-1">
                 🧭 Knowledge Checks — Validate your learning from each session
               </p>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => navigate("/xp")}
-                className="px-4 py-2 text-sm font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-amber-100 border border-amber-500 rounded-lg hover:bg-amber-600 transition-colors"
               >
                 🔭 XP-lanation
               </button>
               <button
                 onClick={() => navigate("/leaderboard")}
-                className="px-4 py-2 text-sm font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-amber-100 border border-amber-500 rounded-lg hover:bg-amber-600 transition-colors"
               >
                 🏆 Leaderboard
               </button>
               <button
                 onClick={handleAnalyticsClick}
-                className="px-4 py-2 text-sm font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-amber-100 border border-amber-500 rounded-lg hover:bg-amber-600 transition-colors"
               >
                 📊 View Analytics
               </button>
