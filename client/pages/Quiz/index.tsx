@@ -9,9 +9,10 @@ import { PASS_THRESHOLD, TOTAL_TIME_SECONDS, MAX_ATTEMPTS, type Role } from "@/d
 import type { Question } from "@/data/quiz-types.js";
 import QuestionCard from "@/components/quiz/QuestionCard.js";
 import QuizResults from "@/components/quiz/QuizResults.js";
-import RoleSelector from "@/components/quiz/RoleSelector.js";
+// Role is now auto-populated from registration — RoleSelector removed
 import { useQuizTimer } from "@/components/quiz/QuizTimer.js";
 import { showXpToasts } from "@/components/camp/xp-toasts.js";
+import TierUnlockModal, { getTierIndex } from "@/components/camp/TierUnlockModal.js";
 
 type QuizPhase = "intro" | "active" | "review" | "results";
 
@@ -31,6 +32,7 @@ export default function QuizPage() {
   const [attemptNumber, setAttemptNumber] = useState(1);
   const [lastAttemptPassed, setLastAttemptPassed] = useState(false);
   const [shuffleSeed, setShuffleSeed] = useState(() => Date.now());
+  const [tierUnlock, setTierUnlock] = useState<{ tierIndex: number; totalXp: number; position: number } | null>(null);
 
   const timer = useQuizTimer(TOTAL_TIME_SECONDS);
 
@@ -60,12 +62,26 @@ export default function QuizPage() {
   const userEmail = user?.email ?? "";
   const userName = user?.name ?? "";
 
+  // Load viewer registration data (for role)
+  const { data: viewerData } = useApiData(
+    "CampLookupViewer",
+    { userEmail },
+    { enabled: !!userEmail }
+  );
+
   // Load prior attempts
   const { data: priorAttempts } = useApiData(
     "CampGetUserAttempts",
     { quizId: quizId ?? "", userEmail },
     { enabled: !!quizId && !!userEmail }
   );
+
+  // Auto-set role from viewer registration when no prior attempts
+  useEffect(() => {
+    if (viewerData?.viewer?.user_role && !role) {
+      setRole(viewerData.viewer.user_role as Role);
+    }
+  }, [viewerData]);
 
   useEffect(() => {
     if (priorAttempts?.attempts && priorAttempts.attempts.length > 0) {
@@ -240,6 +256,32 @@ export default function QuizPage() {
           xpData,
           preSubmitXpRef.current
         );
+
+        // Tier Unlock: "Seed, Don't Celebrate" pattern
+        const TIER_KEY = `tier_celebrated_${userEmail}`;
+        const currentTierIdx = getTierIndex(xpData.totalXp);
+        const storedTier = localStorage.getItem(TIER_KEY);
+
+        if (storedTier === null) {
+          // First encounter — seed current tier silently
+          localStorage.setItem(TIER_KEY, String(currentTierIdx));
+        } else {
+          const previousTierIdx = parseInt(storedTier, 10);
+          if (currentTierIdx > previousTierIdx) {
+            // New tier unlocked! Show the modal
+            localStorage.setItem(TIER_KEY, String(currentTierIdx));
+            // Get leaderboard position
+            try {
+              const leaderboard = await executeApi("CampGetLeaderboard", {});
+              const position = leaderboard.leaderboard.findIndex(
+                (e: any) => e.email.toLowerCase() === userEmail.toLowerCase()
+              ) + 1;
+              setTierUnlock({ tierIndex: currentTierIdx, totalXp: xpData.totalXp, position: position || 1 });
+            } catch {
+              setTierUnlock({ tierIndex: currentTierIdx, totalXp: xpData.totalXp, position: 1 });
+            }
+          }
+        }
       } catch {
         // XP toasts are non-critical
       }
@@ -324,11 +366,9 @@ export default function QuizPage() {
         {phase === "intro" && (
           <IntroScreen
             quiz={quiz}
-            role={role}
-            onRoleChange={setRole}
             onStart={handleStartQuiz}
             attemptNumber={attemptNumber}
-            hasExistingRole={!!(priorAttempts?.attempts && priorAttempts.attempts.length > 0)}
+            hasRole={!!role}
           />
         )}
 
@@ -466,24 +506,30 @@ export default function QuizPage() {
           />
         )}
       </main>
+
+      {/* Tier Unlock Modal */}
+      {tierUnlock && (
+        <TierUnlockModal
+          tierIndex={tierUnlock.tierIndex}
+          totalXp={tierUnlock.totalXp}
+          leaderboardPosition={tierUnlock.position}
+          onDismiss={() => setTierUnlock(null)}
+        />
+      )}
     </div>
   );
 }
 
 function IntroScreen({
   quiz,
-  role,
-  onRoleChange,
   onStart,
   attemptNumber,
-  hasExistingRole,
+  hasRole,
 }: {
   quiz: any;
-  role: Role | null;
-  onRoleChange: (r: Role) => void;
   onStart: () => void;
   attemptNumber: number;
-  hasExistingRole: boolean;
+  hasRole: boolean;
 }) {
   const quizEmoji = QUIZ_EMOJIS[quiz.id] ?? "📚";
   return (
@@ -523,13 +569,12 @@ function IntroScreen({
           </div>
         </div>
 
-        {!hasExistingRole && <RoleSelector value={role} onChange={onRoleChange} />}
       </div>
 
       <div className="flex gap-3">
         <button
           onClick={onStart}
-          disabled={!role}
+          disabled={!hasRole}
           className="flex-1 py-3 bg-emerald-600 text-white rounded-lg font-medium text-sm hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           {attemptNumber > 2 ? "🔥 Start Retry" : attemptNumber > 1 ? "🔥 Try Again" : "🧗 Begin Ascent"}

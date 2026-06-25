@@ -13,6 +13,9 @@ import CampGetLeaderboard from './camp/get-leaderboard.js';
 import CampTrackVisit from './camp/track-visit.js';
 import CampGetVisitStats from './camp/get-visit-stats.js';
 import CampGetCampers from './camp/get-campers.js';
+import CampRegisterViewer from './camp/register-viewer.js';
+import CampLookupViewer from './camp/lookup-viewer.js';
+import CampBackfillViewers from './camp/backfill-viewers.js';
 
 const apis = {
   CampSetupTables,
@@ -27,6 +30,9 @@ const apis = {
   CampTrackVisit,
   CampGetVisitStats,
   CampGetCampers,
+  CampRegisterViewer,
+  CampLookupViewer,
+  CampBackfillViewers,
 } as const;
 
 export default apis;
