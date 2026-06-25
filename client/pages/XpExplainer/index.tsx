@@ -6,7 +6,7 @@ import { useApiData } from "@/hooks/useApiData.js";
 const TIERS = [
   { emoji: "🏕️", name: "Base Camper", range: "0 – 75 XP", description: "Just getting started on the trail" },
   { emoji: "🥾", name: "Trailblazer", range: "76 – 150 XP", description: "Building momentum and confidence" },
-  { emoji: "🧗", name: "Summit Seeker", range: "151 – 234 XP", description: "Pushing toward mastery" },
+  { emoji: "🧗🏼", name: "Summit Seeker", range: "151 – 234 XP", description: "Pushing toward mastery" },
   { emoji: "🏔️✨", name: "Pinnacle Achiever", range: "235+ XP", description: "The peak. You've conquered the Ascent." },
 ];
 

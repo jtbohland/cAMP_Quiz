@@ -35,7 +35,7 @@ export default function XpCard() {
     : totalXp <= 75
       ? "🥾 Trailblazer"
       : totalXp <= 150
-        ? "🧗 Summit Seeker"
+        ? "🧗🏼 Summit Seeker"
         : "🏔️✨ Pinnacle Achiever";
 
   return (

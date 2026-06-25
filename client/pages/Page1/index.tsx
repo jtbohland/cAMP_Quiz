@@ -6,6 +6,7 @@ import { executeApi } from "@/lib/executeApi.js";
 import { QUIZZES, QUIZ_ORDER, QUIZ_EMOJIS } from "@/data/quizzes/index.js";
 import type { Quiz } from "@/data/quiz-types.js";
 import XpCard from "@/components/camp/XpCard.js";
+import SummitModal from "@/components/camp/SummitModal.js";
 
 const ANALYTICS_PASSWORD = "smoreenablement";
 
@@ -13,6 +14,11 @@ export default function HomePage() {
   const navigate = useNavigate();
   const user = useSuperblocksUser();
   const userEmail = user?.email ?? "";
+  const userName = user?.name ?? "";
+
+  // Summit modal state
+  const [showSummit, setShowSummit] = useState(false);
+  const summitChecked = useRef(false);
 
   // Track page visit silently on mount (fire-and-forget)
   const visitTracked = useRef(false);
@@ -59,6 +65,33 @@ export default function HomePage() {
   const passedQuizIds = effectiveProgression?.passedQuizIds ?? [];
   const completedQuizIds = effectiveProgression?.completedQuizIds ?? [];
   const retakeQuizIds = effectiveProgression?.retakeQuizIds ?? [];
+
+  // Fetch XP data for summit modal stats
+  const { data: xpData } = useApiData(
+    "CampGetUserXP",
+    { userEmail },
+    { enabled: !!userEmail }
+  );
+
+  // Summit modal — "Seed, Don't Celebrate" pattern
+  useEffect(() => {
+    if (summitChecked.current || !userEmail || passedQuizIds.length === 0) return;
+    summitChecked.current = true;
+
+    const SUMMIT_KEY = `summit_celebrated_${userEmail}`;
+    const alreadyCelebrated = localStorage.getItem(SUMMIT_KEY);
+
+    if (passedQuizIds.length >= 15) {
+      if (alreadyCelebrated) {
+        // Already celebrated — don't show again
+        return;
+      }
+      // First time reaching summit — celebrate!
+      localStorage.setItem(SUMMIT_KEY, "true");
+      setShowSummit(true);
+    }
+    // If < 15, seed nothing (unlike tier which seeds current level)
+  }, [userEmail, passedQuizIds]);
   // "Fully failed" = in retakeQuizIds is false AND completed but not passed
   // i.e., used all 4 attempts without passing → they get "Review Quiz" to see answers
   const fullyFailedQuizIds = completedQuizIds.filter(
@@ -230,6 +263,16 @@ export default function HomePage() {
           ))}
         </div>
       </main>
+
+      {/* Summit Modal */}
+      {showSummit && xpData && (
+        <SummitModal
+          userName={userName}
+          totalXp={xpData.totalXp}
+          quizzesPassed={passedQuizIds.length}
+          onDismiss={() => setShowSummit(false)}
+        />
+      )}
 
       {/* Password Modal */}
       {showPasswordModal && (

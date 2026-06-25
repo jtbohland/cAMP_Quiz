@@ -27,7 +27,7 @@ const XP = {
 const TIERS = [
   { min: 0, max: 75, name: "Base Camper", emoji: "\u{1F3D5}\uFE0F" },
   { min: 76, max: 150, name: "Trailblazer", emoji: "\u{1F97E}" },
-  { min: 151, max: 234, name: "Summit Seeker", emoji: "\u{1F9D7}" },
+  { min: 151, max: 234, name: "Summit Seeker", emoji: "\u{1F9D7}\u{1F3FC}" },
   { min: 235, max: 9999, name: "Pinnacle Achiever", emoji: "\u{1F3D4}\uFE0F\u2728" },
 ] as const;
 
