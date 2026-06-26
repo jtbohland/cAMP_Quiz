@@ -60,6 +60,31 @@ export default api({
       return { viewer: viewers[0], isRegistered: true };
     }
 
+    // Fallback: user isn't in camp_viewers, but may have prior quiz attempts
+    // with a role recorded. Use that so the quiz button isn't permanently disabled.
+    const fallbackRole = await ctx.integrations.db.query(
+      "SELECT user_role FROM camp_quiz_attempts WHERE LOWER(user_email) = LOWER($1) ORDER BY id DESC LIMIT 1",
+      z.object({ user_role: z.string() }),
+      [userEmail],
+      { label: "Fallback role from prior attempts" }
+    );
+
+    if (fallbackRole.length > 0) {
+      return {
+        viewer: {
+          id: 0,
+          user_name: "",
+          user_email: userEmail,
+          user_role: fallbackRole[0].user_role,
+          manager_name: "",
+          manager_email: null,
+          ascent_day1: new Date().toISOString().split("T")[0],
+          welcome_seen: true,
+        },
+        isRegistered: false,
+      };
+    }
+
     return { viewer: null, isRegistered: false };
   },
 });
