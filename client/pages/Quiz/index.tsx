@@ -37,6 +37,22 @@ export default function QuizPage() {
 
   const timer = useQuizTimer(TOTAL_TIME_SECONDS);
 
+  // Reset ALL state when quizId changes (prevents stale state when navigating between quizzes)
+  useEffect(() => {
+    setPhase("intro");
+    setRole(null);
+    setCurrentIndex(0);
+    setAnswers({});
+    setShowFeedback(false);
+    setScore(0);
+    setAttemptNumber(1);
+    setLastAttemptPassed(false);
+    setShuffleSeed(Date.now());
+    setTierUnlock(null);
+    setSnapshotQuestions(null);
+    timer.reset();
+  }, [quizId]);
+
   // Shuffle questions using a seeded Fisher-Yates shuffle
   const shuffledQuestions = useMemo(() => {
     if (!quiz) return [];

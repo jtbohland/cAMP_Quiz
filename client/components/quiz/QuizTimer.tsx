@@ -62,6 +62,11 @@ export function useQuizTimer(totalSeconds: number) {
 
   const start = useCallback(() => setIsRunning(true), []);
   const pause = useCallback(() => setIsRunning(false), []);
+  const reset = useCallback(() => {
+    setIsRunning(false);
+    setSecondsLeft(totalSeconds);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+  }, [totalSeconds]);
   const getElapsed = useCallback(() => totalSeconds - secondsLeft, [totalSeconds, secondsLeft]);
 
   useEffect(() => {
@@ -84,5 +89,5 @@ export function useQuizTimer(totalSeconds: number) {
     };
   }, [isRunning]);
 
-  return { secondsLeft, isRunning, start, pause, getElapsed, isTimeUp: secondsLeft === 0 };
+  return { secondsLeft, isRunning, start, pause, reset, getElapsed, isTimeUp: secondsLeft === 0 };
 }
