@@ -37,10 +37,10 @@ export default function QuizPage() {
 
   const timer = useQuizTimer(TOTAL_TIME_SECONDS);
 
-  // Reset ALL state when quizId changes (prevents stale state when navigating between quizzes)
+  // Reset quiz-level state when quizId changes (prevents stale state when navigating between quizzes)
+  // NOTE: role is intentionally NOT reset — it's a user-level property, not quiz-level
   useEffect(() => {
     setPhase("intro");
-    setRole(null);
     setCurrentIndex(0);
     setAnswers({});
     setShowFeedback(false);
@@ -94,12 +94,11 @@ export default function QuizPage() {
   );
 
   // Auto-set role from viewer registration when no prior attempts
-  // Depends on `role` so it re-fires after the quizId reset clears role to null
   useEffect(() => {
     if (viewerData?.viewer?.user_role && !role) {
       setRole(viewerData.viewer.user_role as Role);
     }
-  }, [viewerData, role]);
+  }, [viewerData]);
 
   useEffect(() => {
     if (priorAttempts?.attempts && priorAttempts.attempts.length > 0) {
