@@ -94,11 +94,12 @@ export default function QuizPage() {
   );
 
   // Auto-set role from viewer registration when no prior attempts
+  // Depends on `role` so it re-fires after the quizId reset clears role to null
   useEffect(() => {
     if (viewerData?.viewer?.user_role && !role) {
       setRole(viewerData.viewer.user_role as Role);
     }
-  }, [viewerData]);
+  }, [viewerData, role]);
 
   useEffect(() => {
     if (priorAttempts?.attempts && priorAttempts.attempts.length > 0) {
