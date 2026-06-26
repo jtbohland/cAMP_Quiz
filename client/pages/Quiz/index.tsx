@@ -33,6 +33,7 @@ export default function QuizPage() {
   const [lastAttemptPassed, setLastAttemptPassed] = useState(false);
   const [shuffleSeed, setShuffleSeed] = useState(() => Date.now());
   const [tierUnlock, setTierUnlock] = useState<{ tierIndex: number; totalXp: number; position: number } | null>(null);
+  const [snapshotQuestions, setSnapshotQuestions] = useState<Question[] | null>(null);
 
   const timer = useQuizTimer(TOTAL_TIME_SECONDS);
 
@@ -95,6 +96,17 @@ export default function QuizPage() {
         setPhase("review");
         setAttemptNumber(maxAttempt);
         setLastAttemptPassed(lastPassed);
+        // Load snapshot for review — show the questions the learner actually took
+        const latestAttempt = priorAttempts.attempts[priorAttempts.attempts.length - 1];
+        if (latestAttempt) {
+          executeApi("CampGetQuizSnapshot", { attemptId: latestAttempt.id })
+            .then((snap) => {
+              if (snap.questions && snap.questions.length > 0) {
+                setSnapshotQuestions(snap.questions as Question[]);
+              }
+            })
+            .catch(() => { /* Fallback to static questions */ });
+        }
         // Track review engagement
         if (quizId && userEmail) {
           trackReview({ quizId, userEmail, userName }).catch(() => {});
@@ -145,6 +157,15 @@ export default function QuizPage() {
           return diff <= 2;
         });
       }
+      if (question.type === "match") {
+        if (!question.pairs) return false;
+        try {
+          const userMatches: Record<string, string> = JSON.parse(userAnswer);
+          return question.pairs.every((p) => userMatches[p.term] === p.match);
+        } catch {
+          return false;
+        }
+      }
       return String(question.correct) === userAnswer;
     },
     []
@@ -191,24 +212,33 @@ export default function QuizPage() {
       const correctAnswerText =
         q.type === "fill"
           ? (q.correct as string[]).join(" / ")
-          : q.type === "mc" && q.options
-            ? q.options[q.correct as number]
-            : q.correct === 0
-              ? "True"
-              : "False";
+          : q.type === "match" && q.pairs
+            ? q.pairs.map((p) => `${p.term} → ${p.match}`).join(", ")
+            : q.type === "mc" && q.options
+              ? q.options[q.correct as number]
+              : q.correct === 0
+                ? "True"
+                : "False";
 
       return {
         questionId: q.id,
         questionText: q.text,
         userAnswer:
           userAnswer !== null
-            ? q.type === "mc" && q.options
-              ? q.options[parseInt(userAnswer)]
-              : q.type === "tf"
-                ? parseInt(userAnswer) === 0
-                  ? "True"
-                  : "False"
-                : userAnswer
+            ? q.type === "match" && q.pairs
+              ? (() => {
+                  try {
+                    const m: Record<string, string> = JSON.parse(userAnswer);
+                    return Object.entries(m).map(([t, v]) => `${t} → ${v}`).join(", ");
+                  } catch { return userAnswer; }
+                })()
+              : q.type === "mc" && q.options
+                ? q.options[parseInt(userAnswer)]
+                : q.type === "tf"
+                  ? parseInt(userAnswer) === 0
+                    ? "True"
+                    : "False"
+                  : userAnswer
             : null,
         correctAnswer: correctAnswerText,
         isCorrect,
@@ -239,6 +269,18 @@ export default function QuizPage() {
         passed,
         timeSpentSeconds: elapsed,
         answers: answerDetails,
+        questionsSnapshot: shuffledQuestions.map((q) => ({
+          id: q.id,
+          type: q.type,
+          lo: q.lo,
+          text: q.text,
+          options: q.options,
+          correct: q.correct,
+          explanation: q.explanation,
+          placeholder: q.placeholder,
+          pairs: q.pairs,
+          resource: q.resource,
+        })),
       });
 
       // Fetch updated XP and show toasts
@@ -462,7 +504,7 @@ export default function QuizPage() {
                 </>
               )}
             </div>
-            {shuffledQuestions.map((q, i) => {
+            {(isReviewMode && snapshotQuestions ? snapshotQuestions : shuffledQuestions).map((q, i) => {
               const userAns = answers[i] ?? null;
               const isReviewFromHome = isReviewMode && userAns === null;
               // In review mode from homepage, show correct answer as selected
