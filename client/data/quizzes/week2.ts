@@ -369,7 +369,7 @@ export const week2Quizzes: Quiz[] = [
         resource: { label: "2026 Sales Policy Handbook (Spekit)", url: "https://app.spekit.co/app/wiki/asset/817909a3-30d8-4b9b-9a35-d8c07150b365?type=asset&expanded=true" }
       },
       {
-        id: 4, type: "tf", lo: "LO3",
+        id: 4, type: "mc", lo: "LO3",
         text: "Your customer has low product adoption at renewal and the CS team flags it as a risk. Applying Challenger thinking, what's the core problem — and what does it tell you about the right response?",
         options: ["Low adoption is a product fit issue — explore whether Amplitude is actually the right tool for their use case before investing in the renewal", "Low adoption is a price problem — customers who aren't using the product won't justify the cost, so flexibility on price is needed to retain them", "Low adoption is a value problem, not a price problem. The right response is to Teach: surface the unrealized outcomes they're missing, deepen the pain of the status quo, and build a path to value. Discounting without addressing adoption just makes a cheaper version of the same risk.", "Low adoption is a CS problem — escalate to the customer success team and let them drive the renewal conversation"],
         correct: 2,
