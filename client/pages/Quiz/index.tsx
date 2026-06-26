@@ -13,6 +13,7 @@ import QuizResults from "@/components/quiz/QuizResults.js";
 import { useQuizTimer } from "@/components/quiz/QuizTimer.js";
 import { showXpToasts } from "@/components/camp/xp-toasts.js";
 import TierUnlockModal, { getTierIndex } from "@/components/camp/TierUnlockModal.js";
+import CampGear from "@/components/camp/CampGear.js";
 
 type QuizPhase = "intro" | "active" | "review" | "results";
 
@@ -432,6 +433,7 @@ export default function QuizPage() {
         {phase === "intro" && (
           <IntroScreen
             quiz={quiz}
+            quizId={quizId ?? ""}
             onStart={handleStartQuiz}
             attemptNumber={attemptNumber}
             hasRole={!!role}
@@ -474,7 +476,7 @@ export default function QuizPage() {
                     disabled={submitting}
                     className="px-5 py-2 text-sm font-medium bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50"
                   >
-                    {submitting ? "Submitting..." : "🏁 Submit Quiz"}
+                    {submitting ? "Submitting..." : "🌙 Submit Quiz"}
                   </button>
                 )}
               </div>
@@ -593,12 +595,14 @@ export default function QuizPage() {
 
 function IntroScreen({
   quiz,
+  quizId,
   onStart,
   attemptNumber,
   hasRole,
   roleLoading = false,
 }: {
   quiz: any;
+  quizId: string;
   onStart: () => void;
   attemptNumber: number;
   hasRole: boolean;
@@ -643,6 +647,8 @@ function IntroScreen({
         </div>
 
       </div>
+
+      <CampGear quizId={quizId} />
 
       <div className="flex flex-col gap-3">
         <button
