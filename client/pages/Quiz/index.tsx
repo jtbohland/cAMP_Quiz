@@ -37,10 +37,10 @@ export default function QuizPage() {
 
   const timer = useQuizTimer(TOTAL_TIME_SECONDS);
 
-  // Reset ALL state when quizId changes (prevents stale state when navigating between quizzes)
+  // Reset quiz-level state when quizId changes (prevents stale state when navigating between quizzes)
+  // NOTE: role is intentionally NOT reset — it's a user-level property, not quiz-level
   useEffect(() => {
     setPhase("intro");
-    setRole(null);
     setCurrentIndex(0);
     setAnswers({});
     setShowFeedback(false);
@@ -87,21 +87,26 @@ export default function QuizPage() {
   );
 
   // Load prior attempts
-  const { data: priorAttempts, loading: attemptsLoading } = useApiData(
+  const { data: priorAttempts, loading: attemptsLoading, fetching: attemptsFetching } = useApiData(
     "CampGetUserAttempts",
     { quizId: quizId ?? "", userEmail },
     { enabled: !!quizId && !!userEmail }
   );
 
   // Auto-set role from viewer registration when no prior attempts
-  // Depends on `role` so it re-fires after the quizId reset clears role to null
   useEffect(() => {
     if (viewerData?.viewer?.user_role && !role) {
       setRole(viewerData.viewer.user_role as Role);
     }
-  }, [viewerData, role]);
+  }, [viewerData]);
 
   useEffect(() => {
+    // Guard: don't process stale cached data while a fetch is in-flight.
+    // When quizId changes, useApiData starts fetching new data (attemptsFetching=true)
+    // but may still hold cached data from the previous quiz. Wait until the fetch
+    // completes before processing.
+    if (attemptsFetching) return;
+
     if (priorAttempts?.attempts && priorAttempts.attempts.length > 0) {
       const maxAttempt = Math.max(...priorAttempts.attempts.map((a: any) => a.attempt_number));
       const lastPassed = priorAttempts.attempts.some((a: any) => a.passed);
@@ -138,7 +143,7 @@ export default function QuizPage() {
         setAttemptNumber(maxAttempt + 1);
       }
     }
-  }, [priorAttempts, isReviewMode]);
+  }, [priorAttempts, isReviewMode, attemptsFetching]);
 
   // Handle timer expiry
   useEffect(() => {
