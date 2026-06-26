@@ -87,7 +87,7 @@ export default function QuizPage() {
   );
 
   // Load prior attempts
-  const { data: priorAttempts, loading: attemptsLoading } = useApiData(
+  const { data: priorAttempts, loading: attemptsLoading, fetching: attemptsFetching } = useApiData(
     "CampGetUserAttempts",
     { quizId: quizId ?? "", userEmail },
     { enabled: !!quizId && !!userEmail }
@@ -101,6 +101,12 @@ export default function QuizPage() {
   }, [viewerData]);
 
   useEffect(() => {
+    // Guard: don't process stale cached data while a fetch is in-flight.
+    // When quizId changes, useApiData starts fetching new data (attemptsFetching=true)
+    // but may still hold cached data from the previous quiz. Wait until the fetch
+    // completes before processing.
+    if (attemptsFetching) return;
+
     if (priorAttempts?.attempts && priorAttempts.attempts.length > 0) {
       const maxAttempt = Math.max(...priorAttempts.attempts.map((a: any) => a.attempt_number));
       const lastPassed = priorAttempts.attempts.some((a: any) => a.passed);
@@ -137,7 +143,7 @@ export default function QuizPage() {
         setAttemptNumber(maxAttempt + 1);
       }
     }
-  }, [priorAttempts, isReviewMode]);
+  }, [priorAttempts, isReviewMode, attemptsFetching]);
 
   // Handle timer expiry
   useEffect(() => {
