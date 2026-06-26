@@ -64,14 +64,14 @@ export default function QuizPage() {
   const userName = user?.name ?? "";
 
   // Load viewer registration data (for role)
-  const { data: viewerData } = useApiData(
+  const { data: viewerData, loading: viewerLoading } = useApiData(
     "CampLookupViewer",
     { userEmail },
     { enabled: !!userEmail }
   );
 
   // Load prior attempts
-  const { data: priorAttempts } = useApiData(
+  const { data: priorAttempts, loading: attemptsLoading } = useApiData(
     "CampGetUserAttempts",
     { quizId: quizId ?? "", userEmail },
     { enabled: !!quizId && !!userEmail }
@@ -365,7 +365,7 @@ export default function QuizPage() {
             onClick={() => navigate("/")}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
           >
-            🧭 Back to Trail Map
+            🧠 Back to cAMP Quizzes
           </button>
         </div>
       </div>
@@ -378,23 +378,23 @@ export default function QuizPage() {
   const quizEmoji = QUIZ_EMOJIS[quiz.id] ?? "📚";
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-orange-50">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-6 py-3 sticky top-0 z-10">
+      <header className="bg-amber-700 px-6 py-3 sticky top-0 z-10">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <div>
-            <p className="text-xs text-blue-600 font-semibold uppercase tracking-wide">
+            <p className="text-xs text-amber-200 font-semibold uppercase tracking-wide">
               🏔️ cAMP Ascent: Sales
             </p>
-            <h1 className="text-lg font-bold text-slate-900 leading-tight">
+            <h1 className="text-lg font-bold text-white leading-tight">
               {quizEmoji} {quiz.day}: {quiz.title}
             </h1>
-            <p className="text-xs text-slate-500">{quiz.week}</p>
+            <p className="text-xs text-amber-200">{quiz.week}</p>
           </div>
           {phase === "active" && (
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-amber-200">
                   {answeredCount}/{quiz.questions.length} answered
                 </p>
               </div>
@@ -411,6 +411,7 @@ export default function QuizPage() {
             onStart={handleStartQuiz}
             attemptNumber={attemptNumber}
             hasRole={!!role}
+            roleLoading={viewerLoading || attemptsLoading}
           />
         )}
 
@@ -509,7 +510,11 @@ export default function QuizPage() {
               const isReviewFromHome = isReviewMode && userAns === null;
               // In review mode from homepage, show correct answer as selected
               const displayAnswer = isReviewFromHome
-                ? String(q.type === "fill" ? (q.correct as string[])[0] : q.correct)
+                ? q.type === "fill"
+                  ? (q.correct as string[])[0]
+                  : q.type === "match" && q.pairs
+                    ? JSON.stringify(Object.fromEntries(q.pairs.map((p) => [p.term, p.match])))
+                    : String(q.correct)
                 : userAns;
               return (
                 <QuestionCard
@@ -528,9 +533,9 @@ export default function QuizPage() {
             <div className="flex justify-center">
               <button
                 onClick={isReviewMode || attemptNumber % 2 === 0 ? () => navigate("/") : handleFinishReview}
-                className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700"
+                className="px-6 py-2.5 bg-amber-700 text-white rounded-lg font-medium text-sm hover:bg-amber-800"
               >
-                {isReviewMode || attemptNumber % 2 === 0 ? "← Back to Trail Map" : "See Results"}
+                {isReviewMode || attemptNumber % 2 === 0 ? "🧠 Back to cAMP Quizzes" : "See Results"}
               </button>
             </div>
           </div>
@@ -567,18 +572,20 @@ function IntroScreen({
   onStart,
   attemptNumber,
   hasRole,
+  roleLoading = false,
 }: {
   quiz: any;
   onStart: () => void;
   attemptNumber: number;
   hasRole: boolean;
+  roleLoading?: boolean;
 }) {
   const quizEmoji = QUIZ_EMOJIS[quiz.id] ?? "📚";
   return (
     <div className="max-w-lg mx-auto space-y-6">
       <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
         <h2 className="text-xl font-bold text-slate-900 mb-2">
-          {quizEmoji} Knowledge Check
+          {quizEmoji} cAMP Quiz
         </h2>
         <p className="text-sm text-slate-600 mb-4">
           Test your understanding of <strong>{quiz.title}</strong>.
@@ -613,22 +620,20 @@ function IntroScreen({
 
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex flex-col gap-3">
         <button
           onClick={onStart}
-          disabled={!hasRole}
-          className="flex-1 py-3 bg-emerald-600 text-white rounded-lg font-medium text-sm hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          disabled={!hasRole || roleLoading}
+          className="w-full py-3 bg-emerald-600 text-white rounded-lg font-medium text-sm hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
-          {attemptNumber > 2 ? "🔥 Start Retry" : attemptNumber > 1 ? "🔥 Try Again" : "🧗 Begin Ascent"}
+          {roleLoading ? "Loading..." : attemptNumber === 4 ? "🪨 Final Try" : attemptNumber === 3 ? "🍂 Start Retake" : attemptNumber === 2 ? "🍃 Try Again" : "👣 Begin Quiz"}
         </button>
-        {attemptNumber > 2 && (
-          <button
-            onClick={() => window.location.href = "/"}
-            className="px-4 py-3 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition-colors"
-          >
-            🧭 Back to Trail Map
-          </button>
-        )}
+        <button
+          onClick={() => window.location.href = "/"}
+          className="w-full py-2.5 text-amber-700 border border-amber-300 bg-amber-50 rounded-lg font-medium text-sm hover:bg-amber-100 transition-colors"
+        >
+          🧠 Back to cAMP Quizzes
+        </button>
       </div>
     </div>
   );
