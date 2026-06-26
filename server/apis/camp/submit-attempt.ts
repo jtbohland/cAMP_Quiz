@@ -27,6 +27,7 @@ export default api({
     passed: z.boolean(),
     timeSpentSeconds: z.number().nullable(),
     answers: z.array(AnswerInput),
+    questionsSnapshot: z.array(z.any()).optional(),
   }),
   output: z.object({
     attemptId: z.number(),
@@ -84,6 +85,29 @@ export default api({
           answer.isCorrect,
         ],
         { label: `Insert answer for Q${answer.questionId}` }
+      );
+    }
+
+    // Save question snapshot if provided
+    if (input.questionsSnapshot && input.questionsSnapshot.length > 0) {
+      await ctx.integrations.db.execute(
+        `CREATE TABLE IF NOT EXISTS camp_quiz_snapshots (
+          id SERIAL PRIMARY KEY,
+          attempt_id INTEGER NOT NULL UNIQUE REFERENCES camp_quiz_attempts(id),
+          quiz_id TEXT NOT NULL,
+          questions_json JSONB NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )`,
+        undefined,
+        { label: "Ensure camp_quiz_snapshots table" }
+      );
+
+      await ctx.integrations.db.execute(
+        `INSERT INTO camp_quiz_snapshots (attempt_id, quiz_id, questions_json)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (attempt_id) DO NOTHING`,
+        [attemptId, input.quizId, JSON.stringify(input.questionsSnapshot)],
+        { label: "Save question snapshot" }
       );
     }
 

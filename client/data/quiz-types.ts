@@ -10,7 +10,7 @@ export type Question = {
   explanation: string;
   placeholder?: string;
   pairs?: { term: string; match: string }[];
-  resource: { label: string; url: string };
+  resource?: { label: string; url: string };
 };
 
 export type Quiz = {

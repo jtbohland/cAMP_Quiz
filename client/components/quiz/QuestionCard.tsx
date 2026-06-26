@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback } from "react";
 import type { Question } from "@/data/quiz-types.js";
+import MatchingCard from "./MatchingCard.js";
 
 interface QuestionCardProps {
   question: Question;
@@ -94,7 +95,7 @@ export default function QuestionCard({
           Question {index + 1} of {total}
         </span>
         <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium">
-          {question.type === "mc" ? "Multiple Choice" : question.type === "tf" ? "True / False" : "Fill in the Blank"}
+          {question.type === "mc" ? "Multiple Choice" : question.type === "tf" ? "True / False" : question.type === "match" ? "Matching" : "Fill in the Blank"}
         </span>
       </div>
 
@@ -127,6 +128,16 @@ export default function QuestionCard({
           placeholder={question.placeholder ?? "Type your answer..."}
           showFeedback={showFeedback}
           isCorrect={isCorrect}
+        />
+      )}
+
+      {question.type === "match" && question.pairs && (
+        <MatchingCard
+          pairs={question.pairs}
+          questionId={question.id}
+          onAnswer={onAnswer}
+          userAnswer={userAnswer}
+          showFeedback={showFeedback}
         />
       )}
 
