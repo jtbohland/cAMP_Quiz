@@ -50,6 +50,7 @@ export default function QuizPage() {
     setShuffleSeed(Date.now());
     setTierUnlock(null);
     setSnapshotQuestions(null);
+    submitLockRef.current = false;
     timer.reset();
   }, [quizId]);
 
@@ -368,6 +369,7 @@ export default function QuizPage() {
   }, []);
 
   const handleRetry = useCallback(() => {
+    submitLockRef.current = false; // Unlock submit for the new attempt
     setAttemptNumber((n) => n + 1);
     setPhase("active");
     setAnswers({});
