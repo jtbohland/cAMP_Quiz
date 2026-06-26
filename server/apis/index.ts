@@ -17,6 +17,7 @@ import CampRegisterViewer from './camp/register-viewer.js';
 import CampLookupViewer from './camp/lookup-viewer.js';
 import CampBackfillViewers from './camp/backfill-viewers.js';
 import CampGetQuizSnapshot from './camp/get-quiz-snapshot.js';
+import CampBackfillSnapshots from './camp/backfill-snapshots.js';
 
 const apis = {
   CampSetupTables,
@@ -35,6 +36,7 @@ const apis = {
   CampLookupViewer,
   CampBackfillViewers,
   CampGetQuizSnapshot,
+  CampBackfillSnapshots,
 } as const;
 
 export default apis;

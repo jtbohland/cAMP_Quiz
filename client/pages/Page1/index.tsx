@@ -371,7 +371,7 @@ function QuizCard({
                 : "bg-emerald-600 text-white hover:bg-emerald-700"
           }`}
         >
-          {showReview ? "📖 Review Quiz" : retake ? "🔄 Retake Quiz" : "Start Quiz 🧗"}
+          {showReview ? "📖 Review Quiz" : retake ? "🔄 Retake Quiz" : "👉🏽 This Way to Quiz"}
         </button>
       ) : (
         <div className="w-full py-2 text-sm font-medium text-slate-400 border border-slate-200 rounded-lg text-center">

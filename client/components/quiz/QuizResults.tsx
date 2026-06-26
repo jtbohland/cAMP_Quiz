@@ -45,7 +45,7 @@ export default function QuizResults({
           ? "You've conquered this trail! Your knowledge of this material is solid. Keep ascending! ⛺"
           : canRetry
             ? `You need ${PASS_THRESHOLD}% to summit. Regroup at base camp — you have one more attempt. Hit Try Again!`
-            : `You need ${PASS_THRESHOLD}% to pass. Head back to the Trail Map — you can retake anytime to improve your score. 🧭`}
+            : `You need ${PASS_THRESHOLD}% to pass. Head back to cAMP Quizzes — you can retake anytime to improve your score. 🧠`}
       </p>
 
       <div className="grid grid-cols-3 gap-4 mb-6">
@@ -73,16 +73,16 @@ export default function QuizResults({
             onClick={onRetry}
             className="px-5 py-2.5 bg-emerald-600 text-white rounded-lg font-medium text-sm hover:bg-emerald-700 transition-colors"
           >
-            🔥 Try Again
+            {attemptNumber === 3 ? "🍂 Start Retake" : "🍃 Try Again"}
           </button>
         )}
-        {/* Always show "Back to Trail Map" except on attempt 1 fail (where they must try again) */}
+        {/* Always show "Back to cAMP Quizzes" except on attempt 1 fail (where they must try again) */}
         {(passed || !canRetry || attemptNumber >= 3) && (
           <button
             onClick={onBackToQuizzes}
-            className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition-colors"
+            className="px-5 py-2.5 bg-amber-700 text-white rounded-lg font-medium text-sm hover:bg-amber-800 transition-colors"
           >
-            🧭 Back to Trail Map
+            🧠 Back to cAMP Quizzes
           </button>
         )}
       </div>

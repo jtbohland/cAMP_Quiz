@@ -30,7 +30,7 @@ export default function AnalyticsPage() {
               onClick={() => navigate("/")}
               className="px-4 py-2 text-sm font-medium text-amber-100 border border-amber-500 rounded-lg hover:bg-amber-600"
             >
-              🧭 Back to Trail Map
+              🧠 Back to cAMP Quizzes
             </button>
           </div>
         </div>
