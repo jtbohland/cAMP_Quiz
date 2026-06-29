@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import type { Camper } from "../../../server/apis/camp/get-campers.js";
+import { RolePill, RegionPill, ManagerPill } from "./pills.js";
 
 const PAGE_SIZE = 20;
 
@@ -115,14 +116,18 @@ export default function CampersTable({ campers }: { campers: Camper[] }) {
             <tbody>
               {pageData.map((c) => (
                 <tr key={c.userEmail} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-                  {/* Camper cell: name, email, role, tier badge */}
+                  {/* Camper cell: name, email, pills */}
                   <td className="px-3 py-3">
                     <div className="flex items-center gap-2">
                       <span className="text-lg" title={c.tier.name}>{c.tier.emoji}</span>
                       <div className="min-w-0">
                         <p className="font-medium text-slate-900 truncate">{c.userName}</p>
                         <p className="text-xs text-slate-500 truncate">{c.userEmail}</p>
-                        <p className="text-xs text-slate-400">{c.userRole}</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          <RolePill role={c.userRole} />
+                          <ManagerPill name={c.managerName} />
+                          <RegionPill region={c.region} />
+                        </div>
                       </div>
                     </div>
                   </td>

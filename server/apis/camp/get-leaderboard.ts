@@ -25,6 +25,8 @@ export default api({
       rank: z.number(),
       userName: z.string(),
       userEmail: z.string(),
+      userRole: z.string(),
+      region: z.string(),
       totalXp: z.number(),
       tier: z.object({
         name: z.string(),
@@ -100,6 +102,15 @@ export default api({
       "Week 3": ["day6", "day7", "day8", "day9", "day10"],
       "Week 4": ["day11", "day12", "day13", "day14", "day15"],
     };
+
+    // Fetch viewer records for role & region
+    const viewers = await ctx.integrations.db.query(
+      `SELECT user_email, user_role, region FROM camp_viewers LIMIT 500`,
+      z.object({ user_email: z.string(), user_role: z.string(), region: z.string() }),
+      undefined,
+      { label: "Get viewer records for role/region" }
+    );
+    const viewerMap = new Map(viewers.map((v) => [v.user_email.toLowerCase(), v]));
 
     // Calculate XP per user
     const userXpMap = new Map<string, number>();
@@ -221,9 +232,12 @@ export default api({
       .map((u) => {
         const xp = userXpMap.get(u.user_email) ?? 0;
         const tier = TIERS.find((t) => xp >= t.min && xp <= t.max) ?? TIERS[0];
+        const viewer = viewerMap.get(u.user_email.toLowerCase());
         return {
           userName: u.user_name,
           userEmail: u.user_email,
+          userRole: viewer?.user_role ?? u.user_name,
+          region: viewer?.region ?? "NAMER",
           totalXp: xp,
           tier: { name: tier.name, emoji: tier.emoji },
           quizzesCompleted: u.quizzes_completed,

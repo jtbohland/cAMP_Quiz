@@ -9,6 +9,7 @@ const ViewerSchema = z.object({
   user_role: z.string(),
   manager_name: z.string(),
   manager_email: z.string().nullable(),
+  region: z.string(),
   ascent_day1: z.string(),
   welcome_seen: z.boolean(),
 });
@@ -27,6 +28,7 @@ export default api({
     userRole: z.string(),
     managerName: z.string(),
     managerEmail: z.string().nullable(),
+    region: z.string(),
     ascentDay1: z.string(),
   }),
 
@@ -35,7 +37,7 @@ export default api({
     isNew: z.boolean(),
   }),
 
-  async run(ctx, { userName, userEmail, userRole, managerName, managerEmail, ascentDay1 }) {
+  async run(ctx, { userName, userEmail, userRole, managerName, managerEmail, region, ascentDay1 }) {
     // Ensure table exists
     await ctx.integrations.db.execute(
       `CREATE TABLE IF NOT EXISTS camp_viewers (
@@ -56,7 +58,7 @@ export default api({
 
     // Check if viewer already exists
     const existing = await ctx.integrations.db.query(
-      "SELECT id, user_name, user_email, user_role, manager_name, manager_email, ascent_day1::text, welcome_seen FROM camp_viewers WHERE LOWER(user_email) = LOWER($1) LIMIT 1",
+      "SELECT id, user_name, user_email, user_role, manager_name, manager_email, region, ascent_day1::text, welcome_seen FROM camp_viewers WHERE LOWER(user_email) = LOWER($1) LIMIT 1",
       ViewerSchema,
       [userEmail],
       { label: "Check existing viewer" }
@@ -68,11 +70,11 @@ export default api({
 
     // Insert new viewer
     const inserted = await ctx.integrations.db.query(
-      `INSERT INTO camp_viewers (user_name, user_email, user_role, manager_name, manager_email, ascent_day1)
-       VALUES ($1, $2, $3, $4, $5, $6::date)
-       RETURNING id, user_name, user_email, user_role, manager_name, manager_email, ascent_day1::text, welcome_seen`,
+      `INSERT INTO camp_viewers (user_name, user_email, user_role, manager_name, manager_email, region, ascent_day1)
+       VALUES ($1, $2, $3, $4, $5, $6, $7::date)
+       RETURNING id, user_name, user_email, user_role, manager_name, manager_email, region, ascent_day1::text, welcome_seen`,
       ViewerSchema,
-      [userName, userEmail, userRole, managerName, managerEmail, ascentDay1],
+      [userName, userEmail, userRole, managerName, managerEmail, region, ascentDay1],
       { label: "Insert new viewer" }
     );
 

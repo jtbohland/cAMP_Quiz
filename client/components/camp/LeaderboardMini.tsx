@@ -1,6 +1,10 @@
+import { RolePill, RegionPill } from "./pills.js";
+
 type LeaderEntry = {
   rank: number;
   userName: string;
+  userRole?: string;
+  region?: string;
   totalXp: number;
   tier: { name: string; emoji: string };
   quizzesCompleted: number;
@@ -38,6 +42,10 @@ export default function LeaderboardMini({ leaderboard }: { leaderboard: LeaderEn
               <p className="text-xs text-slate-500">
                 {entry.tier.name} • {entry.quizzesCompleted} quiz{entry.quizzesCompleted !== 1 ? "zes" : ""} completed
               </p>
+              <div className="flex gap-1 mt-1">
+                {entry.userRole && <RolePill role={entry.userRole} />}
+                {entry.region && <RegionPill region={entry.region} />}
+              </div>
             </div>
             <div className="text-right flex-shrink-0">
               <p className="font-bold text-amber-700 text-lg">{entry.totalXp}</p>

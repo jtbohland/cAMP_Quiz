@@ -23,6 +23,8 @@ const CamperSchema = z.object({
   userName: z.string(),
   userEmail: z.string(),
   userRole: z.string(),
+  managerName: z.string(),
+  region: z.string(),
   xp: z.number(),
   tier: z.object({ name: z.string(), emoji: z.string() }),
   quizzesPassed: z.number(),
@@ -48,6 +50,15 @@ export default api({
     campers: z.array(CamperSchema),
   }),
   async run(ctx) {
+    // 0. Get viewer records for manager & region
+    const viewers = await ctx.integrations.db.query(
+      `SELECT user_email, manager_name, region FROM camp_viewers LIMIT 500`,
+      z.object({ user_email: z.string(), manager_name: z.string(), region: z.string() }),
+      undefined,
+      { label: "Get viewer records for manager/region" }
+    );
+    const viewerMap = new Map(viewers.map((v) => [v.user_email.toLowerCase(), v]));
+
     // 1. Get all attempts (excluding admins)
     const allAttempts = await ctx.integrations.db.query(
       `SELECT
@@ -217,10 +228,13 @@ export default api({
 
       const tier = TIERS.find((t) => xp >= t.min && xp <= t.max) ?? TIERS[0];
 
+      const viewer = viewerMap.get(email.toLowerCase());
       campers.push({
         userName: latestName,
         userEmail: email,
         userRole: latestRole,
+        managerName: viewer?.manager_name ?? "",
+        region: viewer?.region ?? "NAMER",
         xp,
         tier: { name: tier.name, emoji: tier.emoji },
         quizzesPassed,

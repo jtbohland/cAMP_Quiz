@@ -18,6 +18,8 @@ import CampLookupViewer from './camp/lookup-viewer.js';
 import CampBackfillViewers from './camp/backfill-viewers.js';
 import CampGetQuizSnapshot from './camp/get-quiz-snapshot.js';
 import CampBackfillSnapshots from './camp/backfill-snapshots.js';
+import CampAddRegionColumn from './camp/add-region-column.js';
+import CampFixChrisRole from './camp/fix-chris-role.js';
 
 const apis = {
   CampSetupTables,
@@ -37,6 +39,8 @@ const apis = {
   CampBackfillViewers,
   CampGetQuizSnapshot,
   CampBackfillSnapshots,
+  CampAddRegionColumn,
+  CampFixChrisRole,
 } as const;
 
 export default apis;

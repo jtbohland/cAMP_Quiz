@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router";
 import { useSuperblocksUser } from "@superblocksteam/library";
 import { useApiData } from "@/hooks/useApiData.js";
+import { RolePill, RegionPill } from "@/components/camp/pills.js";
 
 export default function LeaderboardPage() {
   const navigate = useNavigate();
@@ -99,12 +100,18 @@ export default function LeaderboardPage() {
                       </p>
                     </div>
 
-                    {/* Tier Badge */}
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-lg">{entry.tier.emoji}</span>
-                      <span className="text-xs font-medium text-slate-600 hidden sm:inline">
-                        {entry.tier.name}
-                      </span>
+                    {/* Tier Badge + Role/Region pills */}
+                    <div className="flex flex-col items-end gap-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-lg">{entry.tier.emoji}</span>
+                        <span className="text-xs font-medium text-slate-600 hidden sm:inline">
+                          {entry.tier.name}
+                        </span>
+                      </div>
+                      <div className="flex gap-1">
+                        <RolePill role={entry.userRole} />
+                        <RegionPill region={entry.region} />
+                      </div>
                     </div>
 
                     {/* XP */}
