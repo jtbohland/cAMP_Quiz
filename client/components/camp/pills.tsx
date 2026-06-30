@@ -45,6 +45,28 @@ export function RegionPill({ region }: { region: string }) {
   );
 }
 
+/** Format an ISO timestamp as a friendly date label. */
+function formatActivityDate(iso: string): string {
+  const date = new Date(iso);
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffDays = Math.round((startOfToday.getTime() - startOfDate.getTime()) / 86_400_000);
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays <= 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+export function LastActivityPill({ date }: { date: string }) {
+  if (!date) return null;
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-900">
+      🕓 {formatActivityDate(date)}
+    </span>
+  );
+}
+
 export function ManagerPill({ name }: { name: string }) {
   if (!name) return null;
   return (

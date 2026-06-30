@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import type { Camper } from "../../../server/apis/camp/get-campers.js";
-import { RolePill, RegionPill, ManagerPill } from "./pills.js";
+import { RolePill, RegionPill, ManagerPill, LastActivityPill } from "./pills.js";
 
 const PAGE_SIZE = 20;
 
@@ -127,6 +127,7 @@ export default function CampersTable({ campers }: { campers: Camper[] }) {
                           <RolePill role={c.userRole} />
                           <ManagerPill name={c.managerName} />
                           <RegionPill region={c.region} />
+                          <LastActivityPill date={c.lastActivity} />
                         </div>
                       </div>
                     </div>

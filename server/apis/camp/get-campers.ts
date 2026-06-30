@@ -52,12 +52,24 @@ export default api({
   async run(ctx) {
     // 0. Get viewer records for manager & region
     const viewers = await ctx.integrations.db.query(
-      `SELECT user_email, manager_name, region FROM camp_viewers LIMIT 500`,
-      z.object({ user_email: z.string(), manager_name: z.string(), region: z.string() }),
+      `SELECT user_email, user_role, manager_name, region FROM camp_viewers LIMIT 500`,
+      z.object({ user_email: z.string(), user_role: z.string(), manager_name: z.string(), region: z.string() }),
       undefined,
       { label: "Get viewer records for manager/region" }
     );
     const viewerMap = new Map(viewers.map((v) => [v.user_email.toLowerCase(), v]));
+
+    // 0b. Get latest page visit per user
+    const lastVisits = await ctx.integrations.db.query(
+      `SELECT user_email, MAX(visited_at)::text AS last_visit
+       FROM camp_page_visits
+       GROUP BY user_email
+       LIMIT 500`,
+      z.object({ user_email: z.string(), last_visit: z.string() }),
+      undefined,
+      { label: "Get latest page visit per user" }
+    );
+    const lastVisitMap = new Map(lastVisits.map((v) => [v.user_email.toLowerCase(), v.last_visit]));
 
     // 1. Get all attempts (excluding admins)
     const allAttempts = await ctx.integrations.db.query(
@@ -115,7 +127,9 @@ export default api({
     for (const [email, userAttempts] of attemptsByUser) {
       const latestName = userAttempts[userAttempts.length - 1].user_name;
       const latestRole = userAttempts[userAttempts.length - 1].user_role;
-      const lastActivity = userAttempts[userAttempts.length - 1].created_at;
+      const lastQuizActivity = userAttempts[userAttempts.length - 1].created_at;
+      const lastPageVisit = lastVisitMap.get(email.toLowerCase());
+      const lastActivity = lastPageVisit && lastPageVisit > lastQuizActivity ? lastPageVisit : lastQuizActivity;
 
       // Quizzes passed = distinct quizzes where at least one attempt passed
       const passedQuizzes = new Set<string>();
@@ -232,7 +246,7 @@ export default api({
       campers.push({
         userName: latestName,
         userEmail: email,
-        userRole: latestRole,
+        userRole: viewer?.user_role ?? latestRole,
         managerName: viewer?.manager_name ?? "",
         region: viewer?.region ?? "NAMER",
         xp,
